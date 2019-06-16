@@ -1,0 +1,58 @@
+{
+  "config" : {
+    "inputs" : {
+      "NYSE.csv" : {
+          "company_name" : "Description",
+          "symbol" : "Symbol"
+        }
+    },
+    "directories" : {
+      "cache" : "./data/cache/",
+      "companies" : "./data/cache/companies/",
+      "html_files" : "./data/cache/html_files/",
+      "inputs" : "./data/inputs/"
+    },
+    "files" : {
+      "cik_index" : "cik_index.csv"
+    },
+    "urls" : {
+      "sec_url" : "https://www.sec.gov/",
+      "document_index_id" : "documentsbutton",
+      "sec_query_url" : "cgi-bin/browse-edgar?action=getcompany"
+    },
+    "statements" : {
+      "statement_sections" : {
+        "item7" : {
+          "description" : "Management Discussion and Analysis of Financial Condition and Results of Operations",
+          "regex" : ">Item 7\\.(.*)Item 8\\."
+        },
+        "item8" : {
+          "description" : "Financial Statements and Supplementary Data",
+          "regex" : ">Item 9\\.(.*)Item 10\\."
+        }
+      },
+      "section_cleaners" : {
+        "html" : {
+          "regex" : "<\/?[^>]*>",
+          "replace" : ""
+        },
+        "weird_space" : {
+          "regex" : "\\&nbsp;",
+          "replace" : " "
+        },
+        "special_chars" : {
+          "regex" : "\\&.*?;",
+          "replace" : ""
+        },
+        "newline" : {
+          "regex" : "\\n{2,}",
+          "replace" : "\\n"
+        },
+        "tabs" : {
+          "regex" : "\\t{2,}",
+          "replace" : ""
+        }
+      }
+    }
+  }
+}
