@@ -3,6 +3,7 @@ import os
 import json
 import pickle
 import requests
+import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -13,11 +14,19 @@ def load_config():
 
 config = load_config()
 html_cache = config["directories"]["html_files"]
-url_configs = config["urls"]
+input_dir = config["directories"]["inputs"]
 
+cik_filename = config["files"]["cik_index"]
+cik_path = input_dir + cik_filename
+
+url_configs = config["urls"]
 sec_url = url_configs["sec_url"]
 document_index_id = url_configs["document_index_id"]
 query_url = url_configs["sec_query_url"]
+
+def load_cik_index(path=cik_path):
+    cik_frame = pd.read_csv(path)
+    return dict(zip(cik_frame["Company Name"], cik_frame["CIK"]))
 
 def get_content_url(listing):
 
@@ -27,6 +36,7 @@ def get_content_url(listing):
     annual_document_type = requests.get(full_doc_url)
 
     if annual_document_type.status_code == 200:
+
         annual_document_type_soup = BeautifulSoup(annual_document_type.text, 'html.parser')
 
         annual_doc_table = annual_document_type_soup.find_all('tr')[1] # Get the first row of the doc table
