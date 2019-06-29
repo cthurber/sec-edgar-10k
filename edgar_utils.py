@@ -59,10 +59,10 @@ def get_content_urls(cik, type='10-K'):
         document_listings = document_index_page.find_all(id=document_index_id)
 
         # Parallelize
-        content_urls = [get_content_url(url) for url in document_listings]
+        # content_urls = [get_content_url(url) for url in document_listings]
 
-        # pool = mp.Pool(mp.cpu_count())
-        # content_urls = pool.map(get_content_url, document_listings)
+        pool = mp.Pool(mp.cpu_count())
+        content_urls = pool.map(get_content_url, document_listings)
 
         content_urls = [url for url in content_urls if url != None]
 
