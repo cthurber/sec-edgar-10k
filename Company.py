@@ -31,7 +31,7 @@ class Company(object):
         else:
             return False
 
-    def get_statements(self, cache=True):
+    def get_statements(self, processors=1):
 
         # TODO - Enhancement: Should make a 'producer' here that is consumed by the block below
         # TODO - Create sub-function that can handle retries
@@ -43,7 +43,9 @@ class Company(object):
 
         # TODO - Enhancement: As content becomes available, this block should consume it
         for c in content:
-            statement = Statement("10-K", self.config, c)
+            statement = Statement("10-K", self.config, c, processors)
+            statement.get_sections() # Explicit call once statement is initialized
+
             statement.set_year
             self.statements.append(statement)
             # self.statements[statement.year] = statement
