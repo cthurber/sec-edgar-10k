@@ -9,6 +9,8 @@ from edgar_utils import load_config, load_cik_index
 from Company import Company
 from Statement import Statement
 
+import multiprocessing as mp
+
 class Worker(object):
     """docstring for Worker."""
 
@@ -22,6 +24,8 @@ class Worker(object):
         self.input_config = config["inputs"][self.input_filepath.split('/')[-1]]
         self.companies = []
         self.missed_cik_matches = []
+
+        self.processor_count = mp.cpu_count()
 
     def print_cik_misses(self, list, path):
         with open(path,'w') as fp:
@@ -79,6 +83,8 @@ class Worker(object):
             company = self.create_company(company_listing)
 
             self.companies.append(company)
+
+# print("Number of processors:", mp.cpu_count())
 
         # TODO - Make this optional when debugging
         # self.print_cik_misses(missed_cik_matches, 'data/outputs/errors/missed_cik_matches.csv')
