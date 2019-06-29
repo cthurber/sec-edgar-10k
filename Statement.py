@@ -6,20 +6,23 @@ class Statement(object):
     """Generally, this object represents a financial statement for a company
     In its current implementation however, this is pretty tightly coupled to a 10-K filing"""
 
-    def __init__(self, type, contents):
+    def __init__(self, type, config, contents):
         super(Statement, self).__init__()
         self.type = type
         self.contents = contents
         self.year = ""
-        self.config_section = "statements"
-        self.config = load_config()[self.config_section]
+        self.config = config["statements"]
 
-        # TODO Create Section object
+        # TODO Create array of Section object; multi-thread this
         self.sections = {self.config["statement_sections"][section]["description"] : self.get_section(section) for section in self.config["statement_sections"]}
 
     # TODO - Critical feature... ensure a statement can be tied to a datetime
     def set_year(self):
         self.year = "2019"
+        pass
+
+    def get_sections(self):
+
         pass
 
     def get_section_text(self, section):
