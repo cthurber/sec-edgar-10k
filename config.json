@@ -4,7 +4,11 @@
       "NYSE.csv" : {
           "company_name" : "Description",
           "symbol" : "Symbol"
-        }
+        },
+        "NYSE2.csv" : {
+            "company_name" : "Description",
+            "symbol" : "Symbol"
+          }
     },
     "directories" : {
       "cache" : "./data/cache/",
