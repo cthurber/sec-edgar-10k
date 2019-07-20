@@ -42,6 +42,16 @@ class Worker(object):
         else:
             return False
 
+    def load_company(self, company):
+        filename = self.company_cache + company.cik + '.pickle'
+
+        if os.path.exists(filename):
+            with open(filename, 'rb') as fp:
+                company = pickle.load(fp)
+            return company
+        else:
+            return False
+
     def open_company_file(self):
         """File handler to return a dataframe given an input_filename"""
         company_frame = pd.read_csv(self.input_filepath)
@@ -55,15 +65,27 @@ class Worker(object):
         company_name = company_listing[self.input_config["company_name"]].strip('!')
         symbol = company_listing[self.input_config["symbol"]]
 
+        # Create a skeleton company object
         company = Company(company_name, self.config, symbol)
 
+        # Check if there is a valid CIK for this company
         matched = company.get_cik(self.cik_index)
 
+        # If we have a valid CIK, fetch the statements and save the company
         if matched:
-            # Gather statements
-            company.get_statements()
-            self.save_company(company)
 
+            # Check if this company has been cached locally
+            cached_company = self.load_company(company)
+
+            if cached_company:
+                return cached_company
+
+            else:
+                # Gather statements
+                company.get_statements()
+                self.save_company(company)
+
+        # If the CIK didn't match, we should log this to resolve later
         elif not matched:
             self.missed_cik_matches.append(company.name)
 
