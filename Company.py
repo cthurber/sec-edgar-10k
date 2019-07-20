@@ -18,11 +18,6 @@ class Company(object):
         self.config = config
         self.dir_config = config["directories"]
 
-    def cache_content(self):
-        # Create directory for the current date
-        #
-        pass
-
     def get_cik(self, index):
         company_name = self.name.upper()
         if company_name in list(index.keys()):
@@ -39,6 +34,9 @@ class Company(object):
         if self.cik is None:
             print("Error: CIK was not initialization for", self.name)
 
+        # Parallelize
+        # content_urls = get_content_urls(self.cik)
+        # Create sub-function to fetch from cache or reach out to
         content = [get_content(url, self.name) for url in get_content_urls(self.cik)]
 
         # TODO - Enhancement: As content becomes available, this block should consume it
