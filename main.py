@@ -5,7 +5,7 @@ from Worker import Worker
 
 def main():
     config = load_config()
-    company_list_file = "data/inputs/NYSE2.csv"
+    company_list_file = "data/inputs/NYSE.csv"
     worker = Worker(config, company_list_file)
 
     # Last test (10AM, 6/29): 31 companies in 75 seconds
