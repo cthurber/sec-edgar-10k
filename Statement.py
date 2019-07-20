@@ -17,7 +17,6 @@ class Statement(object):
         self.processors = processors
 
         # TODO Create array of Section object; multi-thread this
-        # self.sections = {}
         self.sections = []
 
     # TODO - Critical feature... ensure a statement can be tied to a datetime
