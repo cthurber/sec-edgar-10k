@@ -2,13 +2,12 @@
 import os
 import pickle
 import requests
-from edgar_utils import get_content, get_content_urls, load_config
 from Statement import Statement
 
 class Company(object):
     """Defines a company which is initiatlized with a name and identifier"""
 
-    def __init__(self, name, config, symbol=None):
+    def __init__(self, name, config, utils, symbol=None):
         super(Company, self).__init__()
         self.name = name
         self.symbol = symbol
@@ -17,6 +16,7 @@ class Company(object):
         self.statements = []   # Array of statement objects
         self.config = config
         self.dir_config = config["directories"]
+        self.utils = utils
 
     def get_cik(self, index):
         company_name = self.name.upper()
@@ -37,7 +37,9 @@ class Company(object):
         # Parallelize
         # content_urls = get_content_urls(self.cik)
         # Create sub-function to fetch from cache or reach out to
-        content = [get_content(url, self.name) for url in get_content_urls(self.cik)]
+        # content_urls = self.utils.get_content_urls(self.cik)
+        # content = self.utils.get_content(content_urls, self.name)
+        content = [self.utils.get_content(url, self.name) for url in self.utils.get_content_urls(self.cik)]
 
         # TODO - Enhancement: As content becomes available, this block should consume it
         for c in content:
@@ -47,6 +49,3 @@ class Company(object):
             statement.set_year
             self.statements.append(statement)
             # self.statements[statement.year] = statement
-
-    def save(self):
-        pass

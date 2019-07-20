@@ -5,7 +5,7 @@ import requests
 import pickle
 # import threading
 import pandas as pd
-from edgar_utils import load_config, load_cik_index
+from edgar_utils import Edgar_Utils
 from Company import Company
 from Statement import Statement
 
@@ -17,7 +17,6 @@ class Worker(object):
     def __init__(self, config, company_list_file):
         super(Worker, self).__init__()
         self.config = config
-        self.cik_index = load_cik_index()
         self.company_cache = config["directories"]["companies"]
         self.input_filepath = company_list_file
         # self.input_filename = company_list_file.split('/')[-1]
@@ -26,6 +25,8 @@ class Worker(object):
         self.missed_cik_matches = []
 
         self.processor_count = mp.cpu_count()
+        self.utils = Edgar_Utils(self.config)
+        self.cik_index = self.utils.load_cik_index()
 
     def print_cik_misses(self, list, path):
         with open(path,'w') as fp:
@@ -66,7 +67,7 @@ class Worker(object):
         symbol = company_listing[self.input_config["symbol"]]
 
         # Create a skeleton company object
-        company = Company(company_name, self.config, symbol)
+        company = Company(company_name, self.config, self.utils, symbol)
 
         # Check if there is a valid CIK for this company
         matched = company.get_cik(self.cik_index)
@@ -95,33 +96,9 @@ class Worker(object):
         """Populates the worker's companies list"""
 
         company_frame = self.open_company_file()
-        # For each company in list
-        # - create company object
-        # -
+
         for index, company_listing in company_frame.iterrows():
-            # Does the company already exist? (Add caching)
-            # - Use CIK pickle matching
-            # If it does not...
+
             company = self.create_company(company_listing)
 
             self.companies.append(company)
-
-# print("Number of processors:", mp.cpu_count())
-
-        # TODO - Make this optional when debugging
-        # self.print_cik_misses(missed_cik_matches, 'data/outputs/errors/missed_cik_matches.csv')
-
-
-
-# Quick test of saving the pickle
-# TODO Abstract this away somewhere else
-# TODO Integrate workload below into block above
-
-# High-level workflow
-# for company in list of companies
-#  - Create a company object
-#  - Get CIK for that company
-#  - Get statements for that company
-#   - Is there a pickle in the cache?
-#   - If not, go out n get it
-#   - Save company as a pickle

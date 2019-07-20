@@ -1,6 +1,5 @@
 import re
 import json
-from edgar_utils import load_config
 from Section import Section
 import multiprocessing as mp
 

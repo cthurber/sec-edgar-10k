@@ -7,95 +7,132 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 import multiprocessing as mp
+import sys
+sys.setrecursionlimit(10000) # This is pretty arbitrary...
 
 def load_config():
     with open("./config.json",'r') as jconfig:
         master_config = json.load(jconfig)["config"]
     return master_config
 
-config = load_config()
-html_cache = config["directories"]["html_files"]
-input_dir = config["directories"]["inputs"]
+# config = load_config()
 
-cik_filename = config["files"]["cik_index"]
-cik_path = input_dir + cik_filename
+class Edgar_Utils(object):
+    """docstring for Edgar_Utils."""
 
-url_configs = config["urls"]
-sec_url = url_configs["sec_url"]
-document_index_id = url_configs["document_index_id"]
-query_url = url_configs["sec_query_url"]
+    def __init__(self, config):
+        self.config = config
+        self.html_cache = self.config["directories"]["html_files"]
+        self.input_dir = self.config["directories"]["inputs"]
 
-def load_cik_index(path=cik_path):
-    cik_frame = pd.read_csv(path)
-    return dict(zip(cik_frame["Company Name"], cik_frame["CIK"]))
+        self.cik_filename = self.config["files"]["cik_index"]
+        self.cik_path = self.input_dir + self.cik_filename
 
-def get_content_url(listing):
+        self.url_configs = self.config["urls"]
+        self.sec_url = self.url_configs["sec_url"]
+        self.document_index_id = self.url_configs["document_index_id"]
+        self.query_url = self.url_configs["sec_query_url"]
 
-    annual_file_index_url = listing['href']
-    full_doc_url = sec_url + annual_file_index_url
+    def load_cik_index(self, path=None):
+        if path is None:
+            path = self.cik_path
+        cik_frame = pd.read_csv(path)
+        return dict(zip(cik_frame["Company Name"], cik_frame["CIK"]))
 
-    annual_document_type = requests.get(full_doc_url)
+    def get_content_url(self, listing):
 
-    if annual_document_type.status_code == 200:
+        annual_file_index_url = listing['href']
+        full_doc_url = self.sec_url + annual_file_index_url
 
-        annual_document_type_soup = BeautifulSoup(annual_document_type.text, 'html.parser')
+        annual_document_type = requests.get(full_doc_url)
 
-        annual_doc_table = annual_document_type_soup.find_all('tr')[1] # Get the first row of the doc table
-        html_doc_link = annual_doc_table.find('a')['href']
+        if annual_document_type.status_code == 200:
 
-        if '.htm' in html_doc_link:
-            return sec_url + html_doc_link
+            annual_document_type_soup = BeautifulSoup(annual_document_type.text, 'html.parser')
 
-    else:
-        print("Error: Unable to reach document table - Status Code", annual_document_type.status_code)
+            annual_doc_table = annual_document_type_soup.find_all('tr')[1] # Get the first row of the doc table
+            html_doc_link = annual_doc_table.find('a')['href']
 
-def get_content_urls(cik, type='10-K'):
+            if '.htm' in html_doc_link:
+                return self.sec_url + html_doc_link
 
-    results = requests.get(sec_url + query_url + '&CIK=' + cik + "&type=" + type + "&dateb=&owner=exclude&count=100")
+        else:
+            print("Error: Unable to reach document table - Status Code", annual_document_type.status_code)
 
-    if results.status_code == 200:
-        document_index_page = BeautifulSoup(results.text, 'html.parser')
+    def get_content_urls(self, cik, type='10-K'):
 
-        document_listings = document_index_page.find_all(id=document_index_id)
+        results = requests.get(self.sec_url + self.query_url + '&CIK=' + cik + "&type=" + type + "&dateb=&owner=exclude&count=100")
 
-        # Parallelize
-        # content_urls = [get_content_url(url) for url in document_listings]
+        if results.status_code == 200:
+            document_index_page = BeautifulSoup(results.text, 'html.parser')
 
-        pool = mp.Pool(mp.cpu_count())
-        content_urls = pool.map(get_content_url, document_listings)
+            document_listings = document_index_page.find_all(id=self.document_index_id)
 
-        content_urls = [url for url in content_urls if url != None]
+            # Parallelize
+            # content_urls = [get_content_url(url) for url in document_listings]
 
-        return content_urls
+            pool = mp.Pool(mp.cpu_count())
+            content_urls = pool.map(self.get_content_url, document_listings)
 
-    else:
-        print("Error: Unable to reach the SEC.gov query URL - Status Code", results.status_code)
-        return False
+            content_urls = [url for url in content_urls if url != None]
 
-def get_content(url, company_name):
+            return content_urls
 
-    company_name = company_name.replace('.','') + '/'
+        else:
+            print("Error: Unable to reach the SEC.gov query URL - Status Code", results.status_code)
+            return False
 
-    cache_name = url.split('/')[-1]
-    cached_folder = html_cache + company_name
-    cached_file = html_cache + company_name + cache_name
+    # def cached_page(filename):
 
-    if os.path.exists(cached_file):
-        with open(cached_file, 'r') as fp:
-            content = fp.read()
-    else:
+
+    # TODO - Break up URL fetching vs. cache fetching
+    def fetch_content(self, url):
         content_request = requests.get(url)
 
         if content_request.status_code == 200:
-            content = content_request.text
+            return content_request.text
         else:
-            print("Error: Unable to reach the SEC.gov documents for",str(cik)," - Status Code",content_request.status_code)
             return False
 
-        # Save to cache
-        if not os.path.exists(cached_folder):
-            os.mkdir(cached_folder)
-        with open(cached_file,'w') as fp:
-            print(content, file=fp)
+    # def get_content(self, url_list, company_name, retry_count):
+    #
+    #     company_name = company_name.replace('.','') + '/'
+    #
+    #     cache_name = url.split('/')[-1]
+    #     cached_folder = self.html_cache + company_name
+    #     cached_file = self.html_cache + company_name + cache_name
+    #
+    #     # If we've cached the webpage, avoid making a request
+    #     if os.path.exists(cached_file):
+    #         with open(cached_file, 'r') as fp:
+    #             content = fp.read()
 
-    return content
+    def get_content(self, url, company_name, retry_count=3):
+
+        company_name = company_name.replace('.','') + '/'
+
+        cache_name = url.split('/')[-1]
+        cached_folder = self.html_cache + company_name
+        cached_file = self.html_cache + company_name + cache_name
+
+        # If we've cached the webpage, avoid making a request
+        if os.path.exists(cached_file):
+            with open(cached_file, 'r') as fp:
+                content = fp.read()
+        else:
+            content_request = requests.get(url)
+
+            if content_request.status_code == 200:
+                content = content_request.text
+            else:
+                # TODO Retry N times mechanism here
+                print("Error: Unable to reach the SEC.gov documents for",str(cik)," - Status Code",content_request.status_code)
+                return False
+
+            # Save to cache
+            if not os.path.exists(cached_folder):
+                os.mkdir(cached_folder)
+            with open(cached_file,'w') as fp:
+                print(content, file=fp)
+
+        return content
