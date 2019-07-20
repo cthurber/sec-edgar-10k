@@ -24,7 +24,6 @@ def main():
         print(company.name, "yielded...")
         print("\t Statements:", num_statements)
         print("\t Sections:", num_sections)
-    # print("\t Text:", worker.companies[-1].statements[0].sections[0].content)
 
 if __name__ == "__main__":
     main()
